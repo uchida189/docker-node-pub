@@ -1,0 +1,254 @@
+物置
+
+docker-compose.yml失敗例１
+# docker comopose upでコンテナを起動する（イメージを元にコンテナを起動する）
+version: "3"    # Composeファイルのバージョン
+services:       # 作成したいサービス（コンテナ）
+  view:
+    build: ./
+    container_name: vnode
+    volumes: 
+    - type: bind
+      source: ./view
+      target: /usr/src/view
+    tty: true
+  
+  # app:          # Service名
+  #   build: ./   # Dockerfileを指定？#image: node:alpine   # Dockerイメージを指定します。
+  #   container_name: node    # Dockerコンテナ名
+  #   volumes:                # マウント先
+  #   - type: bind            # マウントタイプ（バインドマウント） - .app:/usr/src/appともかけるかも？
+  #     source: ./app         # マウント先
+  #     target: /usr/src/app  # マウントされるコンテナのパス
+  #   tty: true               # コンテナを起動させ続ける。
+原因：多分jsがないからだ！
+appの方でもjsファイルを削除したらエラー出た
+ビルド時にコンパイルしてるはずなんだけどな
+そして別のコンパイルの方法を覚えてない
+vimでやってたんだっけ？
+vimの入り方も覚えてない
+
+Dockerfile失敗例１
+# Dockerfileはdocker compose buildでイメージを作成する
+# イメージのベースに加えて、コンパイル等の処理も加えたイメージを作成する？(起動時or作成時にコンパイル？)
+
+# イメージのベース
+# FROM [イメージ名] [タグ（イメージのバージョン）]
+# FROM node:alpine
+FROM node:alpine
+
+# 作業ディレクトリ
+#WORKDIR /usr/src/app
+WORKDIR /usr/src/view
+
+# ホスト(ローカル)のファイルやディレクトリをDockerイメージにコピー
+# COPY [コピー元] [コピー先]
+#COPY ./app/ /usr/src/app
+COPY ./view /usr/src/view
+
+# Dockerイメージのビルド(docker compose build)時にシェルコマンドを実行するためのRUNインストラクション
+# Type Scriptのインストール
+RUN npm i -g typescript
+# ts(TypeScript)ファイルをjs(JavaScript)ファイルにコンパイルするtscコマンド
+#RUN tsc index.ts
+RUN tsc mainview.ts
+
+# Docekrコンテナが起動されたときに、自動で実行されるコマンドを定義するCMD
+# CMD ["実行ファイル", "パラメータ1"]
+# CMDを実行すると処理が終了する？
+#CMD ["node", "index.js"]
+CMD ["vnode", "mainview.js"]
+
+index.js保存用
+var hello = 'Hello World！';
+console.log(hello);
+
+
+docker-compose.yml成功例
+# docker comopose upでコンテナを起動する（イメージを元にコンテナを起動する）
+version: "3"    # Composeファイルのバージョン
+services:       # 作成したいサービス（コンテナ） 
+  app:          # Service名
+    build: ./   # DockerイメージにDockerfileを元に作成されるイメージを指定？#image: node:alpine   # Dockerイメージを指定します。# command: tsc index.tsこれじゃだめ
+    container_name: node    # Dockerコンテナ名
+    volumes:                # volumesなくてもいい
+      - /usr/src/app        # ボリュームマウントにしてみた
+    tty: true               # コンテナを起動させ続ける。
+
+docker-compopse.yml:バインドマウント
+# docker comopose upでコンテナを起動する（イメージを元にコンテナを起動する）
+version: "3"    # Composeファイルのバージョン
+services:       # 作成したいサービス（コンテナ） 
+  app:          # Service名
+    build: ./   # DockerイメージにDockerfileを元に作成されるイメージを指定？#image: node:alpine   # Dockerイメージを指定します。# command: tsc index.tsこれじゃだめ
+    container_name: node    # Dockerコンテナ名
+    volumes: 
+    - ./app:/usr/src/app
+    tty: true               # コンテナを起動させ続ける。
+    
+
+成功例（名前付きボリュームマウントできてるはず）
+# Dockerfileはdocker compose buildでイメージを作成する
+# イメージのベースに加えて、コンパイル等の処理も加えたイメージを作成する？(起動時or作成時にコンパイル？)
+
+# イメージのベース
+# FROM [イメージ名] [タグ（イメージのバージョン）]
+FROM node:alpine
+
+# 作業ディレクトリ
+WORKDIR /usr/src/app
+# WORKDIR /usr/src/view
+
+# ホスト(ローカル)のファイルやディレクトリをDockerイメージにコピー
+# COPY [コピー元] [コピー先]
+COPY ./app/ /usr/src/app
+# COPY ./view /usr/src/view
+
+# Dockerイメージのビルド(docker compose build)時にシェルコマンドを実行するためのRUNインストラクション
+# Type Scriptのインストール
+# RUN npm i -g typescript
+# ts(TypeScript)ファイルをjs(JavaScript)ファイルにコンパイルするtscコマンド
+# RUN tsc index.ts
+# RUN tsc --version
+# RUN tsc mainview.ts
+
+RUN npm i -g typescript \
+    && tsc index.ts
+
+# Docekrコンテナが起動されたときに、自動で実行されるコマンドを定義するCMD
+# CMD ["実行ファイル", "パラメータ1"]
+# CMDを実行すると処理が終了する？
+CMD ["node", "index.js"]
+# CMD ["vnode", "mainview.js"]
+
+# docker comopose upでコンテナを起動する（イメージを元にコンテナを起動する）
+version: "3"    # Composeファイルのバージョン
+services:       # 作成したいサービス（コンテナ） 
+  app:          # Service名
+    build: ./   # DockerイメージにDockerfileを元に作成されるイメージを指定？#image: node:alpine   # Dockerイメージを指定します。# command: tsc index.tsこれじゃだめ
+    container_name: node    # Dockerコンテナ名
+    volumes: 
+    - /usr/src/app          # ボリュームマウント
+    tty: true               # コンテナを起動させ続ける。
+volumes:
+  node_modules:
+  
+  
+記録
+# Dockerfileはdocker compose buildでイメージを作成する
+# イメージのベースに加えて、コンパイル等の処理も加えたイメージを作成する？(起動時or作成時にコンパイル？)
+
+# イメージのベース
+# FROM [イメージ名] [タグ（イメージのバージョン）]
+FROM node:alpine
+
+# 作業ディレクトリ
+WORKDIR /usr/src/app
+
+# ホスト(ローカル)のファイルやディレクトリをDockerイメージにコピー
+# COPY [コピー元] [コピー先]
+COPY ./app/ /usr/src/app
+
+# Dockerイメージのビルド(docker compose build)時にシェルコマンドを実行するためのRUNインストラクション
+# Type Scriptのインストール
+# RUN npm i -g typescript
+# ts(TypeScript)ファイルをjs(JavaScript)ファイルにコンパイルするtscコマンド
+# RUN tsc index.ts
+# RUN tsc --version
+# RUN tsc mainview.ts
+
+RUN npm i -g typescript \
+    && tsc index.ts
+
+WORKDIR /usr/src/view
+COPY ./view/ /usr/src/view
+RUN npm i -g typescript \
+    && tsc mainview.ts
+
+# Docekrコンテナが起動されたときに、自動で実行されるコマンドを定義するCMD
+# CMD ["実行ファイル", "パラメータ1"]
+# CMDを実行すると処理が終了する？
+CMD ["node", "index.js"]
+CMD ["vnode", "mainview.js"]
+
+
+
+    ports:
+      - "5173:5173"
+      - '6006:6006'
+    working_dir: "/usr/src/react"
+
+# docker comopose upでコンテナを起動する（イメージを元にコンテナを起動する）
+version: "3"    # Composeファイルのバージョン
+services:       # 作成したいサービス（コンテナ） 
+  app:          # Service名
+    build: ./app
+    container_name: node    # Dockerコンテナ名
+    volumes:
+    - type: bind
+      source: ./app
+      target: /usr/src/app
+    tty: true               # コンテナを起動させ続ける。
+  view:
+    build: ./view
+    container_name: vnode
+    tty: true
+  react:
+    build: ./react
+    container_name: rnode
+    command: sh -c "cd react-sample-app && yarn start" 
+    volumes:
+    - type: bind
+      source: ./react
+      target: /usr/src/react
+    ports:
+    - "3000:3000"
+    tty: true
+    stdin_open: true #標準入力をコンテナと紐付ける(なくてもいい)
+
+
+react:
+    build: ./react
+    container_name: rnode
+    command: sh -c "cd react-sample-app && npm start" 
+    ports:
+    - "3000:3000"
+    tty: true
+
+# Dockerfileはdocker compose buildでイメージを作成する
+# イメージのベースに加えて、コンパイル等の処理も加えたイメージを作成する？(起動時or作成時にコンパイル？)
+
+# イメージのベース
+# FROM [イメージ名] [タグ（イメージのバージョン）]
+FROM node:alpine
+
+# 作業ディレクトリ
+# WORKDIR /usr/src/app
+WORKDIR /usr/src/react
+
+# ホスト(ローカル)のファイルやディレクトリをDockerイメージにコピー
+# COPY [コピー元] [コピー先]
+# COPY ./app/ /usr/src/app
+COPY ./ /usr/src/react
+
+# Dockerイメージのビルド(docker compose build)時にシェルコマンドを実行するためのRUNインストラクション
+# Type Scriptのインストール
+# RUN npm i -g typescript
+# ts(TypeScript)ファイルをjs(JavaScript)ファイルにコンパイルするtscコマンド
+# RUN tsc index.ts
+# RUN tsc --version
+# RUN tsc mainview.ts
+
+# RUN npm i -g typescript \
+#     && tsc index.ts
+# RUN npm i -g typescript \
+#     && tsc hello.ts
+# RUN npx create-react-app react-sample-app
+
+# Docekrコンテナが起動されたときに、自動で実行されるコマンドを定義するCMD
+# CMD ["実行ファイル", "パラメータ1"]
+# CMDを実行すると処理が終了する？
+# CMD ["node", "index.js"]
+# CMD ["rnode", "cd react-sample-app"]
+# CMD ["rnode", "npm start"]
+# CMD cd react-sample-app && npm start
