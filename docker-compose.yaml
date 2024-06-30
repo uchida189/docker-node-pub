@@ -1,16 +1,14 @@
 version: "3.9"
 services:
   app:
-    container_name: app
+    container_name: next
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
     - type: bind
-      source: ./app
+      source: ./next
       target: /usr/src/app
-    #"react-app"の部分がプロジェクト名になる
-    command: sh -c "npm start" 
+    command: sh -c "npm run dev"
     ports:
       - 3000:3000
-    stdin_open: true #標準入力をコンテナと紐付ける
